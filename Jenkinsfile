@@ -21,7 +21,13 @@ pipeline {
                     url: 'git@github.com:RawatNisha24/jenkin-cicd-pipeline.git'
             }
         }
-
+        stage('Check Node') {
+            steps {
+                sh 'which node'
+                sh 'node -v'
+                sh 'npm -v'
+            }
+        }
         stage('Install & Build') {
             steps {
                 echo "Installing dependencies and building the React app"
