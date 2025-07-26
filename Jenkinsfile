@@ -2,6 +2,7 @@ pipeline {
     agent {
         docker {
             image 'node:18'
+            // args '-u root' 
         }
     }
 
@@ -30,6 +31,8 @@ pipeline {
             steps {
                 echo "Installing dependencies and building the React app"
                 sh '''
+                    mkdir -p .npm_cache
+                    export npm_config_cache=$(pwd)/.npm_cache
                     rm -rf node_modules package-lock.json
                     npm install
                     npm run build
@@ -45,7 +48,7 @@ pipeline {
                     try {
                         sh """
                             mkdir -p ${env.BACKUP_PATH}/${params.DEPLOY_VERSION}
-                            cp -r ${env.APP_PATH}/* ${env.BACKUP_PATH}/${params.DEPLOY_VERSION}/
+                            cp -r ${env.APP_PATH}/* ${env.BACKUP_PATH}/${params.DEPLOY_VERSION}/ || true
                             cp -r build/* ${env.APP_PATH}/
                             chmod +x ${env.APP_PATH}/deploy.sh ${env.APP_PATH}/rollback.sh
                             bash ${env.APP_PATH}/deploy.sh ${params.ENV}
@@ -65,8 +68,8 @@ pipeline {
             echo 'Deployment failed. Starting rollback.'
             script {
                 sh """
-                    chmod +x ${env.APP_PATH}/rollback.sh
-                    bash ${env.APP_PATH}/rollback.sh ${params.DEPLOY_VERSION}
+                    chmod +x ${env.APP_PATH}/rollback.sh || true
+                    bash ${env.APP_PATH}/rollback.sh ${params.DEPLOY_VERSION} || true
                 """
             }
         }
