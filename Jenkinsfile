@@ -21,29 +21,27 @@ pipeline {
                     url: 'git@github.com:RawatNisha24/jenkin-cicd-pipeline.git'
             }
         }
-        
+
         stage('Install & Build') {
             steps {
                 echo "Installing dependencies and building the React app"
                 sh 'npm install'
                 sh 'npm run build'
-
-                // Copy deploy/rollback scripts into the build folder for later use
                 sh 'cp deploy.sh rollback.sh build/'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Deploying locally to $APP_PATH"
+                echo "Deploying to ${env.APP_PATH}"
                 script {
                     try {
                         sh """
-                            mkdir -p $BACKUP_PATH/${params.DEPLOY_VERSION}
-                            cp -r $APP_PATH/* $BACKUP_PATH/${params.DEPLOY_VERSION}/
-                            cp -r build/* $APP_PATH/
-                            chmod +x $APP_PATH/deploy.sh $APP_PATH/rollback.sh
-                            bash $APP_PATH/deploy.sh ${params.ENV}
+                            mkdir -p ${env.BACKUP_PATH}/${params.DEPLOY_VERSION}
+                            cp -r ${env.APP_PATH}/* ${env.BACKUP_PATH}/${params.DEPLOY_VERSION}/
+                            cp -r build/* ${env.APP_PATH}/
+                            chmod +x ${env.APP_PATH}/deploy.sh ${env.APP_PATH}/rollback.sh
+                            bash ${env.APP_PATH}/deploy.sh ${params.ENV}
                         """
                     } catch (e) {
                         echo "Deployment error: ${e.getMessage()}"
@@ -58,11 +56,14 @@ pipeline {
     post {
         failure {
             echo 'Deployment failed. Starting rollback.'
-            sh """
-                chmod +x $APP_PATH/rollback.sh
-                bash $APP_PATH/rollback.sh ${params.DEPLOY_VERSION}
-            """
+            script {
+                sh """
+                    chmod +x ${env.APP_PATH}/rollback.sh
+                    bash ${env.APP_PATH}/rollback.sh ${params.DEPLOY_VERSION}
+                """
+            }
         }
+
         success {
             echo 'Deployment completed successfully.'
         }
