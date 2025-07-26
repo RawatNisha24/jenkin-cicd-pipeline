@@ -22,19 +22,17 @@ pipeline {
             }
         }
 
-        stage('Install & Build') {
-            steps {
-                echo "Cleaning, installing dependencies and building the React app"
-                sh '''
-                    rm -rf node_modules package-lock.json
-                    npm install
-                    npm run build
-                    cp deploy.sh rollback.sh build/
-                '''
-            }
+      stage('Install & Build') {
+        steps {
+            echo "Cleaning, installing dependencies and building the React app"
+            sh '''
+                rm -rf node_modules package-lock.json
+                npm install
+                npm run build
+                cp deploy.sh rollback.sh build/
+            '''
         }
-
-        }
+    }
 
         stage('Deploy') {
             steps {
