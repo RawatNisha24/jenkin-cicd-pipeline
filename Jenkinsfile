@@ -2,7 +2,6 @@ pipeline {
     agent {
         docker {
             image 'node:18'
-            // args '-u root' 
         }
     }
 
@@ -31,12 +30,12 @@ pipeline {
             steps {
                 echo "Installing dependencies and building the React app"
                 sh '''
-                    mkdir -p .npm_cache
-                    export npm_config_cache=$(pwd)/.npm_cache
-                    rm -rf node_modules package-lock.json
-                    npm install
+                    npm ci || npm install
                     npm run build
-                    cp deploy.sh rollback.sh build/
+
+                    if [ -f deploy.sh ] && [ -f rollback.sh ]; then
+                      cp deploy.sh rollback.sh build/
+                    fi
                 '''
             }
         }
