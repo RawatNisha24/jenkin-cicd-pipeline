@@ -14,6 +14,7 @@ pipeline {
     environment {
         APP_PATH = '/var/www/reactapp'
         BACKUP_PATH = '/var/www/reactapp_backups'
+        NPM_CACHE = "${WORKSPACE}/.npm_cache"
     }
 
     stages {
@@ -30,9 +31,20 @@ pipeline {
             steps {
                 echo "Installing dependencies and building the React app"
                 sh '''
+                    # Set custom npm cache
+                    export npm_config_cache=$NPM_CACHE
+                    mkdir -p $npm_config_cache
+
+                    # Clean up any existing installs
+                    rm -rf node_modules package-lock.json
+
+                    # Install dependencies
                     npm ci || npm install
+
+                    # Build the app
                     npm run build
 
+                    # Copy deploy scripts only if they exist
                     if [ -f deploy.sh ] && [ -f rollback.sh ]; then
                       cp deploy.sh rollback.sh build/
                     fi
@@ -66,10 +78,12 @@ pipeline {
         failure {
             echo 'Deployment failed. Starting rollback.'
             script {
-                sh """
-                    chmod +x ${env.APP_PATH}/rollback.sh || true
-                    bash ${env.APP_PATH}/rollback.sh ${params.DEPLOY_VERSION} || true
-                """
+                sh '''
+                    if [ -f ${env.APP_PATH}/rollback.sh ]; then
+                        chmod +x ${env.APP_PATH}/rollback.sh
+                        bash ${env.APP_PATH}/rollback.sh ${params.DEPLOY_VERSION}
+                    fi
+                '''
             }
         }
 
